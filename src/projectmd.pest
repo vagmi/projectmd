@@ -1,0 +1,35 @@
+// ProjectMD Grammar
+
+// Document structure
+document = { SOI ~ frontmatter ~ content ~ EOI }
+
+// YAML front matter
+frontmatter = { yaml_content ~ separator }
+yaml_content = { (!separator ~ ANY)* }
+separator = { "---" ~ "\n" }
+
+// Content section - everything after frontmatter
+// Try to match content lines, allowing for empty content
+content = { line* }
+line = _{ task_item | text_line }
+
+// Task item format: * [#123] - path/to/file.md - description
+// or: * [new] - path/to/file.md - description
+task_item = {
+    "* " ~ task_status ~ " - " ~ task_path ~ " - " ~ task_description ~ "\n"
+}
+
+task_status = {
+    existing_issue | new_issue
+}
+
+existing_issue = { "[#" ~ issue_number ~ "]" }
+issue_number = @{ ASCII_DIGIT+ }
+
+new_issue = { "[new]" }
+
+task_path = @{ (!(" - ") ~ ANY)+ }
+task_description = @{ (!"\n" ~ ANY)* }
+
+// Any line that's not a task item (including empty lines)
+text_line = @{ (!"\n" ~ ANY)* ~ "\n" }
