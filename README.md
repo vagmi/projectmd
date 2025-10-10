@@ -13,6 +13,18 @@ ProjectMD uses markdown files with YAML front matter to manage tasks and automat
 - 🔌 **Backend agnostic** - Currently supports GitHub, extensible to GitLab, Jira, etc.
 - ⚡ **Fast** - Built with Rust using pest parser
 
+## Why ProjectMD?
+
+As developers who work with AI coding assistants, we wanted a project management system that:
+
+1. **Lives in plain text** - Easy to version control, diff, and merge
+2. **Is LLM-readable** - AI assistants can easily parse and understand your project structure
+3. **Integrates with existing tools** - Syncs with GitHub Issues, not replacing but enhancing
+4. **Stays out of the way** - No databases, no servers, just files
+5. **Works from the CLI** - Because that's where we live
+
+Perfect for solo developers and small teams who prefer text files over web interfaces.
+
 ## Installation
 
 ```bash
@@ -250,106 +262,6 @@ projectmd status
 GITHUB_TOKEN=xxx projectmd status -v
 ```
 
-## Development
-
-### Project Structure
-
-```
-projectmd/
-├── src/
-│   ├── main.rs          # CLI entry point
-│   ├── cli.rs           # Command definitions
-│   ├── commands.rs      # Command implementations
-│   ├── parser.rs        # Pest parser + tests
-│   ├── projectmd.pest   # Parser grammar
-│   ├── types.rs         # Data structures
-│   ├── sync.rs          # Sync engine
-│   └── backend/
-│       ├── mod.rs       # Backend trait
-│       └── github.rs    # GitHub backend
-├── Cargo.toml
-└── README.md
-```
-
-### Building
-
-```bash
-# Development build
-cargo build
-
-# Release build
-cargo build --release
-
-# Run tests
-cargo test
-
-# Run with logging
-RUST_LOG=debug cargo run -- sync
-```
-
-### Running Tests
-
-```bash
-cargo test
-
-# Run with output
-cargo test -- --nocapture
-
-# Run specific test
-cargo test test_parse_project_file
-```
-
-## Architecture
-
-### Parser
-
-Uses [Pest](https://pest.rs/) for parsing the projectmd format. The grammar in `src/projectmd.pest` defines:
-- YAML front matter extraction
-- Task list parsing with status markers
-- Flexible content that ignores non-task lines
-
-### Backend Trait
-
-Extensible backend system via the `Backend` trait:
-
-```rust
-#[async_trait]
-pub trait Backend: Send + Sync {
-    async fn create_issue(&self, title: &str, body: &str, labels: Vec<String>) -> Result<Issue>;
-    async fn update_issue(&self, number: u64, title: &str, body: &str, labels: Vec<String>) -> Result<Issue>;
-    async fn get_issue(&self, number: u64) -> Result<Issue>;
-    async fn list_issues(&self) -> Result<Vec<Issue>>;
-}
-```
-
-Easy to add new backends like GitLab, Jira, Linear, etc.
-
-### Sync Engine
-
-The sync engine handles:
-1. Reading and parsing project and task files
-2. Determining which tasks need to be created vs updated
-3. Calling backend methods to sync changes
-4. Updating task files with new issue IDs
-
-## Roadmap
-
-- [ ] Add more subcommands:
-  - `commits` - Link commits to tasks
-  - `close` - Close tasks/issues
-  - `search` - Search across tasks
-- [ ] Support more backends:
-  - GitLab
-  - Jira
-  - Linear
-  - Azure DevOps
-- [ ] Project templates
-- [ ] Bulk operations
-- [ ] Task dependencies and relationships
-- [ ] Time tracking
-- [ ] Milestone support
-- [ ] Configuration file support
-
 ## Contributing
 
 Contributions welcome! Please:
@@ -363,14 +275,3 @@ Contributions welcome! Please:
 
 MIT License - feel free to use this however you'd like!
 
-## Why ProjectMD?
-
-As developers who work with AI coding assistants, we wanted a project management system that:
-
-1. **Lives in plain text** - Easy to version control, diff, and merge
-2. **Is LLM-readable** - AI assistants can easily parse and understand your project structure
-3. **Integrates with existing tools** - Syncs with GitHub Issues, not replacing but enhancing
-4. **Stays out of the way** - No databases, no servers, just files
-5. **Works from the CLI** - Because that's where we live
-
-Perfect for solo developers and small teams who prefer text files over web interfaces.

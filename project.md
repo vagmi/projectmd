@@ -11,4 +11,5 @@ ProjectMD uses markdown files with YAML front matter to manage tasks and automat
 ## Tasks
 
 * [#1] - tasks/release.md - Setup cargo dist
+* [#2] - tasks/set_updated_at.md - Setup updated at for tasks
 
