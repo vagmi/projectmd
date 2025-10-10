@@ -272,53 +272,6 @@ projectmd status
 GITHUB_TOKEN=xxx projectmd status -v
 ```
 
-### Smart Sync Optimization in Action
-
-ProjectMD intelligently skips syncing unchanged files, dramatically reducing GitHub API calls:
-
-```bash
-# First sync - all tasks are synced
-$ projectmd sync
-
-=== Sync Summary ===
-
-Updated (2):
-  - tasks/release.md -> Issue #1
-  - tasks/feature.md -> Issue #2
-
-Total: 2 tasks processed
-
-# Second sync (no file changes) - all tasks skipped
-$ projectmd sync
-
-=== Sync Summary ===
-
-Skipped (no changes) (2):
-  ✓ tasks/release.md
-  ✓ tasks/feature.md
-
-Total: 2 tasks processed
-
-# After editing one file - only that file is synced
-$ vim tasks/release.md
-$ projectmd sync
-
-=== Sync Summary ===
-
-Updated (1):
-  - tasks/release.md -> Issue #1
-
-Skipped (no changes) (1):
-  ✓ tasks/feature.md
-
-Total: 2 tasks processed
-```
-
-**Performance Benefits:**
-- **80% reduction** in GitHub API calls for typical workflows
-- Faster sync operations (1 second vs 5+ seconds)
-- Cleaner git diffs (no spurious timestamp updates)
-- Better rate limit management
 
 ## Contributing
 
