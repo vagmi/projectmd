@@ -1,4 +1,4 @@
-use projectmd::parser::parse_project_file;
+use projectmd::parser::{parse_project_file, parse_task_file};
 use projectmd::types::TaskStatus;
 use std::fs;
 use std::path::PathBuf;
@@ -151,4 +151,42 @@ fn test_yaml_frontmatter_extra_fields() {
 
     // Test that extra fields in YAML are preserved
     assert_eq!(result.config.extra.get("extra_field").and_then(|v| v.as_str()), Some("some_value"));
+}
+
+#[test]
+fn test_task_file_with_timestamps() {
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    path.push("tests");
+    path.push("fixtures");
+    path.push("with_timestamps.md");
+    let content = fs::read_to_string(&path).expect("Failed to load with_timestamps.md");
+
+    let result = parse_task_file(&content).expect("Failed to parse task file with timestamps");
+
+    assert_eq!(result.config.issue_id, Some(5));
+    assert_eq!(result.config.task_type.as_deref(), Some("feature"));
+    assert_eq!(result.config.created_at.as_deref(), Some("2025-01-15T10:30:00Z"));
+    assert_eq!(result.config.updated_at.as_deref(), Some("2025-01-20T15:45:32Z"));
+    assert_eq!(result.title, "API with timestamps");
+}
+
+#[test]
+fn test_task_file_without_timestamps() {
+    // Task files without timestamps should still parse correctly
+    let content = r#"---
+issue_id: 1
+type: bug
+tags: [chore, infra]
+---
+# Setup the authentication
+
+Some details go here.
+"#;
+
+    let result = parse_task_file(content).expect("Failed to parse task file without timestamps");
+
+    assert_eq!(result.config.issue_id, Some(1));
+    assert_eq!(result.config.created_at, None);
+    assert_eq!(result.config.updated_at, None);
+    assert_eq!(result.title, "Setup the authentication");
 }

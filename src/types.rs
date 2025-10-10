@@ -34,6 +34,8 @@ pub struct TaskFileConfig {
     #[serde(rename = "type")]
     pub task_type: Option<String>,
     pub tags: Option<Vec<String>>,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
     #[serde(flatten)]
     pub extra: std::collections::HashMap<String, serde_yaml::Value>,
 }

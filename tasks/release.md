@@ -5,7 +5,10 @@ tags:
 - release
 - distribution
 - infra
+created_at: 2025-10-10T16:50:40.103749380+00:00
+updated_at: 2025-10-10T16:50:40.103749380+00:00
 ---
+
 
 # Setup cargo-dist for automated releases
 

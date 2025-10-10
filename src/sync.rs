@@ -1,10 +1,33 @@
 use anyhow::{Context, Result};
 use std::path::{Path, PathBuf};
 use std::fs;
+use std::time::SystemTime;
+use chrono::{DateTime, Utc};
 
 use crate::backend::Backend;
 use crate::parser::{parse_project_file, parse_task_file};
-use crate::types::{TaskItem, TaskStatus};
+use crate::types::{TaskItem, TaskStatus, TaskFileConfig};
+
+/// Check if a task should be synced based on file modification time
+fn should_sync_task(task_file_path: &Path, config: &TaskFileConfig) -> Result<bool> {
+    // Get file modification time
+    let metadata = fs::metadata(task_file_path)?;
+    let mtime: SystemTime = metadata.modified()?;
+    let mtime_utc: DateTime<Utc> = mtime.into();
+
+    // If no updated_at, always sync (first time)
+    let Some(updated_at_str) = &config.updated_at else {
+        return Ok(true);
+    };
+
+    // Parse stored updated_at timestamp
+    let updated_at = DateTime::parse_from_rfc3339(updated_at_str)
+        .context("Failed to parse updated_at timestamp")?
+        .with_timezone(&Utc);
+
+    // Only sync if file was modified after last sync
+    Ok(mtime_utc > updated_at)
+}
 
 /// Sync engine for managing project tasks and backend issues
 pub struct SyncEngine<B: Backend> {
@@ -71,6 +94,13 @@ impl<B: Backend> SyncEngine<B> {
 
         let task_file = parse_task_file(&task_content)?;
 
+        // Check if we need to sync this task (only for existing issues)
+        if matches!(task_item.status, TaskStatus::Existing(_)) {
+            if !should_sync_task(&task_file_path, &task_file.config)? {
+                return Ok(SyncAction::Skipped);
+            }
+        }
+
         // Extract labels from tags
         let labels = task_file.config.tags
             .clone()
@@ -86,8 +116,8 @@ impl<B: Backend> SyncEngine<B> {
                     .create_issue(&task_file.title, &task_file.body, labels)
                     .await?;
 
-                // Update the task file with the new issue ID
-                self.update_task_file_issue_id(&task_file_path, &task_content, issue.number)?;
+                // Update the task file with the new issue ID and timestamps
+                self.update_task_file_with_metadata(&task_file_path, &task_content, issue.number, true)?;
 
                 Ok(SyncAction::Created(issue.number))
             }
@@ -96,7 +126,7 @@ impl<B: Backend> SyncEngine<B> {
                 if task_file.config.issue_id.is_none() ||
                    task_file.config.issue_id != Some(*issue_num) {
                     // Update the task file to match the project file
-                    self.update_task_file_issue_id(&task_file_path, &task_content, *issue_num)?;
+                    self.update_task_file_with_metadata(&task_file_path, &task_content, *issue_num, false)?;
                 }
 
                 // Update the issue
@@ -104,19 +134,37 @@ impl<B: Backend> SyncEngine<B> {
                     .update_issue(*issue_num, &task_file.title, &task_file.body, labels)
                     .await?;
 
+                // Update the updated_at timestamp
+                self.update_task_file_with_metadata(&task_file_path, &task_content, *issue_num, false)?;
+
                 Ok(SyncAction::Updated(issue.number))
             }
         }
     }
 
-    /// Update the issue_id in a task file
-    fn update_task_file_issue_id(&self, path: &Path, content: &str, issue_id: u64) -> Result<()> {
+    /// Update the task file with issue_id and timestamps
+    fn update_task_file_with_metadata(
+        &self,
+        path: &Path,
+        content: &str,
+        issue_id: u64,
+        is_new: bool
+    ) -> Result<()> {
         // Parse the file to get the config
         let task_file = parse_task_file(content)?;
 
         // Update the config
         let mut updated_config = task_file.config;
         updated_config.issue_id = Some(issue_id);
+
+        // Set timestamps
+        let now = Utc::now().to_rfc3339();
+
+        if is_new || updated_config.created_at.is_none() {
+            updated_config.created_at = Some(now.clone());
+        }
+
+        updated_config.updated_at = Some(now);
 
         // Serialize back to YAML
         let yaml_str = serde_yaml::to_string(&updated_config)?;
@@ -191,9 +239,9 @@ impl SyncResult {
         }
 
         if !self.skipped.is_empty() {
-            println!("\nSkipped ({}):", self.skipped.len());
+            println!("\nSkipped (no changes) ({}):", self.skipped.len());
             for path in &self.skipped {
-                println!("  - {}", path.display());
+                println!("  ✓ {}", path.display());
             }
         }
 
