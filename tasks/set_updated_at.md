@@ -311,16 +311,16 @@ Useful for:
 
 ## Acceptance criteria
 
-- [ ] `created_at` and `updated_at` fields added to TaskFileConfig
-- [ ] `should_sync_task()` function checks file mtime vs updated_at
-- [ ] Sync skips tasks that haven't been modified
-- [ ] Timestamps set correctly on create and update
-- [ ] SyncAction::Skipped variant is used and reported
-- [ ] Skipped tasks shown in sync summary
-- [ ] chrono dependency added
-- [ ] Tests added for timestamp comparison logic
-- [ ] Backward compatibility tested with old task files
-- [ ] Documentation updated
+- [x] `created_at` and `updated_at` fields added to TaskFileConfig
+- [x] `should_sync_task()` function checks file mtime vs updated_at
+- [x] Sync skips tasks that haven't been modified
+- [x] Timestamps set correctly on create and update
+- [x] SyncAction::Skipped variant is used and reported
+- [x] Skipped tasks shown in sync summary
+- [x] chrono dependency added
+- [x] Tests added for timestamp comparison logic
+- [x] Backward compatibility tested with old task files
+- [x] Documentation updated
 
 ## Performance benefits
 
