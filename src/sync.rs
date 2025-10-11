@@ -71,7 +71,7 @@ impl<B: Backend> SyncEngine<B> {
                     }
                 },
                 Err(e) => {
-                    result.errors.push((task_item.path.clone(), e.to_string()));
+                    result.errors.push((task_item.path.clone(), format!("{:?}", e)));
                 }
             }
         }
