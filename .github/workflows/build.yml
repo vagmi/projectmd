@@ -42,8 +42,8 @@ jobs:
       - name: Build macOS Binary
         run: |
           cargo build --release
-          strip ../target/${{ matrix.target }}/release/projectmd
-          cp ../target/${{ matrix.target }}/release/projectmd ../../projectmd-macos-${{ matrix.arch }}
+          strip target/release/projectmd
+          cp target/release/projectmd projectmd-macos-${{ matrix.arch }}
 
       - name: Import Code Signing Certificate
         env:
